@@ -1,0 +1,7 @@
+.env
+*.env
+__pycache__/
+*.pyc
+newsletter_output.html
+.vscode/
+.idea/

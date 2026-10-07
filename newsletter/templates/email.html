@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automotive Intelligence</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1, h2, h3 { color: #1a365d; }
+        .header { border-bottom: 2px solid #1a365d; padding-bottom: 10px; margin-bottom: 20px; }
+        .section { margin-bottom: 30px; }
+        .story { margin-bottom: 20px; padding: 15px; background-color: #f8fafc; border-left: 4px solid #3182ce; }
+        .story-title { font-size: 1.2em; font-weight: bold; margin-bottom: 5px; color: #2b6cb0; }
+        .label { font-weight: bold; color: #4a5568; }
+        .trend-box { background-color: #ebf8ff; padding: 15px; border-radius: 5px; border: 1px solid #bee3f8; }
+        .mba-box { background-color: #f0fff4; padding: 15px; border-radius: 5px; border: 1px solid #c6f6d5; }
+        .footer { margin-top: 40px; font-size: 0.9em; color: #718096; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+        a { color: #3182ce; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚗 AUTOMOTIVE INTELLIGENCE</h1>
+        <h3>{{ date }}</h3>
+        <p><strong>India + Global | Strategy | Technology | Markets</strong></p>
+    </div>
+
+    <div class="section">
+        <h2>🔥 EXECUTIVE BRIEF</h2>
+        <h3>Things You Should Know Today</h3>
+        <ul>
+            {% for story in top_stories %}
+            <li><strong>{{ story.title }}</strong>: {{ story.analysis_data.key_facts[0] }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    {% if india_stories %}
+    <div class="section">
+        <h2>🇮🇳 INDIA AUTOMOTIVE</h2>
+        {% for story in india_stories %}
+        <div class="story">
+            <div class="story-title">{{ story.title }}</div>
+            <p><span class="label">What happened:</span> {{ story.analysis_data.key_facts | join(' ') }}</p>
+            <p><span class="label">Why it matters:</span> {{ story.analysis_data.analysis }}</p>
+            <p><span class="label">Strategic implications:</span> {{ story.analysis_data.inference }}</p>
+            <p><span class="label">Source:</span> <a href="{{ story.url }}">{{ story.source }}</a></p>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if global_stories %}
+    <div class="section">
+        <h2>🌎 GLOBAL AUTOMOTIVE</h2>
+        {% for story in global_stories %}
+        <div class="story">
+            <div class="story-title">{{ story.title }}</div>
+            <p><span class="label">What happened:</span> {{ story.analysis_data.key_facts | join(' ') }}</p>
+            <p><span class="label">Why it matters:</span> {{ story.analysis_data.analysis }}</p>
+            <p><span class="label">Strategic implications:</span> {{ story.analysis_data.inference }}</p>
+            <p><span class="label">Source:</span> <a href="{{ story.url }}">{{ story.source }}</a></p>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if trend_data %}
+    <div class="section">
+        <h2>📈 TREND WATCH</h2>
+        <div class="trend-box">
+            <h3>Trend: {{ trend_data.trend_name }}</h3>
+            <p><span class="label">What is changing?</span><br> {{ trend_data.what_is_changing }}</p>
+            <p><span class="label">Evidence from recent developments:</span></p>
+            <ul>
+                {% for ev in trend_data.evidence %}
+                <li>{{ ev }}</li>
+                {% endfor %}
+            </ul>
+            <p><span class="label">Strategic significance:</span><br> {{ trend_data.strategic_significance }}</p>
+            {% if trend_data.mba_connection %}
+            <p><span class="label">MBA connection:</span> {{ trend_data.mba_connection }}</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if mba_takeaway %}
+    <div class="section">
+        <h2>🎓 MBA TAKEAWAY</h2>
+        <div class="mba-box">
+            <p><span class="label">Concept:</span> {{ mba_takeaway.concept }}</p>
+            <p><span class="label">Lesson:</span> {{ mba_takeaway.explanation }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if meaningful_numbers %}
+    <div class="section">
+        <h2>📌 NUMBERS THAT MATTER</h2>
+        <ul>
+            {% for num in meaningful_numbers %}
+            <li><strong>{{ num.value }}</strong> ({{ num.metric }}) - {{ num.context }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        <p>This briefing was generated automatically by the Automotive Intelligence System.</p>
+    </div>
+</body>
+</html>

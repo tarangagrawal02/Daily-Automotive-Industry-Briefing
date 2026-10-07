@@ -1,0 +1,8 @@
+google-generativeai
+beautifulsoup4
+requests
+duckduckgo_search
+schedule
+jinja2
+python-dotenv
+sqlite3
