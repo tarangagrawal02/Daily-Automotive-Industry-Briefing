@@ -1,46 +1,58 @@
 import logging
-from duckduckgo_search import DDGS
+import requests
+import xml.etree.ElementTree as ET
+from email.utils import parsedate_to_datetime
 from datetime import datetime, timedelta
+from urllib.parse import quote_plus
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def search_news(query, max_results=20, max_age_days=2):
     """
-    Search for recent news using DuckDuckGo.
+    Search for recent news using Google News RSS feeds.
     """
-    logging.info(f"Searching for: {query}")
+    logging.info(f"Searching Google News for: {query}")
     results = []
     
+    encoded_query = quote_plus(query)
+    # Using the US English edition (works fine globally for news aggregation)
+    url = f"https://news.google.com/rss/search?q={encoded_query}&hl=en-US&gl=US&ceid=US:en"
+    
     try:
-        with DDGS() as ddgs:
-            ddgs_news = ddgs.news(query, max_results=max_results)
-            if not ddgs_news:
-                return results
-                
-            for item in ddgs_news:
-                # date format from DDG news: usually '2023-11-20T14:48:00+00:00'
-                pub_date_str = item.get("date")
-                
+        response = requests.get(url, timeout=15)
+        response.raise_for_status()
+        
+        root = ET.fromstring(response.content)
+        
+        # Google News RSS structure: <rss> -> <channel> -> <item>
+        items = root.findall('./channel/item')
+        
+        for item in items[:max_results]:
+            title = item.findtext('title')
+            link = item.findtext('link')
+            source = item.findtext('source')
+            pub_date_str = item.findtext('pubDate')
+            description = item.findtext('description') or ""
+            
+            if pub_date_str:
                 try:
-                    # Clean up the string to standard ISO format without Z if needed
-                    if pub_date_str:
-                        pub_date_str = pub_date_str.replace("Z", "+00:00")
-                        pub_date = datetime.fromisoformat(pub_date_str)
-                        # Remove timezone info for simple comparison
-                        pub_date = pub_date.replace(tzinfo=None)
+                    # Parses standard RFC-2822 dates like 'Thu, 03 Oct 2024 10:15:30 GMT'
+                    pub_date = parsedate_to_datetime(pub_date_str)
+                    
+                    # Make it naive UTC for simple comparison
+                    if pub_date.tzinfo:
+                        pub_date = pub_date.astimezone(None).replace(tzinfo=None)
                         
-                        if (datetime.utcnow() - pub_date) <= timedelta(days=max_age_days):
-                            results.append({
-                                'title': item.get('title'),
-                                'url': item.get('url'),
-                                'source': item.get('source'),
-                                'published_at': item.get('date'),
-                                'snippet': item.get('body')
-                            })
+                    if (datetime.utcnow() - pub_date) <= timedelta(days=max_age_days):
+                        results.append({
+                            'title': title,
+                            'url': link,
+                            'source': source,
+                            'published_at': pub_date_str,
+                            'snippet': description
+                        })
                 except Exception as e:
-                    logging.warning(f"Error parsing date for '{item.get('title')}': {e}")
-                    # If date parsing fails, include it just in case, or we could skip it.
-                    # We will skip it to maintain recency strictly.
+                    logging.warning(f"Error parsing date for '{title}': {e}")
                     pass
 
     except Exception as e:

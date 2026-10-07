@@ -1,6 +1,5 @@
 google-generativeai
 beautifulsoup4
 requests
-duckduckgo_search
 jinja2
 python-dotenv

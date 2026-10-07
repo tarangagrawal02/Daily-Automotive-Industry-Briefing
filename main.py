@@ -29,8 +29,8 @@ def run_pipeline(is_test=False):
     # 1. Search and Collect Candidate Articles
     candidates = get_candidate_articles()
     if not candidates:
-        logging.warning("No candidate articles found.")
-        return
+        logging.error("No candidate articles found. DuckDuckGo may have rate-limited the IP. Aborting run.")
+        sys.exit(1)
         
     # 2. Extract and Prepare for Analysis
     articles_to_analyze = []
@@ -68,8 +68,8 @@ def run_pipeline(is_test=False):
                     analyzed_articles.append(orig_article)
             
     if not analyzed_articles:
-        logging.warning("No new articles could be analyzed.")
-        return
+        logging.error("No new articles could be analyzed. Aborting run.")
+        sys.exit(1)
         
     # 3. Filter and Deduplicate
     final_stories = deduplicate_and_filter(analyzed_articles, db)
