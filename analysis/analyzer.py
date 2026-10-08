@@ -1,13 +1,11 @@
 import os
 import json
 import logging
-import google.generativeai as genai
 from config.settings import config
 from storage.database import Database
+import requests
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-import requests
 
 def setup_gemini():
     api_key = config.GEMINI_API_KEY
@@ -23,7 +21,7 @@ def batch_analyze_articles(articles):
         return {}
         
     api_key = config.GEMINI_API_KEY
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={api_key}"
     
     articles_text = ""
     for article in articles:

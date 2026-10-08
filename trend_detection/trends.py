@@ -1,12 +1,10 @@
 import logging
 import json
-import google.generativeai as genai
 from config.settings import config
 from storage.database import Database
+import requests
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-import requests
 
 def detect_trend(recent_stories, today_stories):
     """
@@ -16,7 +14,7 @@ def detect_trend(recent_stories, today_stories):
     if not api_key:
         return None
         
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={api_key}"
     
     # Combine titles and themes
     all_context = []
