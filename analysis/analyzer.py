@@ -3,7 +3,8 @@ import json
 import logging
 from config.settings import config
 from storage.database import Database
-import requests
+from google import genai
+from google.genai.errors import APIError
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -21,7 +22,7 @@ def batch_analyze_articles(articles):
         return {}
         
     api_key = config.GEMINI_API_KEY
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={api_key}"
+    client = genai.Client(api_key=api_key)
     
     articles_text = ""
     for article in articles:
@@ -60,18 +61,15 @@ def batch_analyze_articles(articles):
     - If the article is rumors/speculation, flag it in analysis but if unverified and low impact, set is_relevant to false.
     """
     
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}]
-    }
-    
     import time
     for attempt in range(4):
         try:
-            response = requests.post(url, json=payload)
-            response.raise_for_status()
-            data = response.json()
+            interaction = client.interactions.create(
+                model="gemini-3.8-flash",
+                input=prompt
+            )
             
-            text_response = data['candidates'][0]['content']['parts'][0]['text']
+            text_response = interaction.output_text
             
             if text_response.startswith("```json"):
                 text_response = text_response[7:-3]
@@ -83,42 +81,20 @@ def batch_analyze_articles(articles):
             # Map back to a dictionary by id
             mapped_results = {item['id']: item for item in results}
             return mapped_results
-        except requests.exceptions.HTTPError as e:
-            if response.status_code in [429, 503] and attempt < 3:
-                try:
-                    err_json = response.json()
-                    details = err_json.get('error', {}).get('details', [])
-                    
-                    is_daily_quota = False
-                    retry_delay = None
-                    
-                    for detail in details:
-                        if detail.get('@type') == 'type.googleapis.com/google.rpc.QuotaFailure':
-                            for violation in detail.get('violations', []):
-                                if 'PerDay' in violation.get('quotaId', ''):
-                                    is_daily_quota = True
-                        if detail.get('@type') == 'type.googleapis.com/google.rpc.RetryInfo':
-                            delay_str = detail.get('retryDelay', '')
-                            if delay_str.endswith('s'):
-                                retry_delay = float(delay_str[:-1])
-                                
-                    if is_daily_quota:
-                        logging.error("Daily quota exhausted. Aborting retries for batch analysis.")
-                        return {}
-                        
-                    wait_time = retry_delay + 2 if retry_delay else 2 ** attempt * 15
-                    logging.warning(f"Got {response.status_code}, retrying in {wait_time}s...")
-                    time.sleep(wait_time)
-                except Exception as parse_e:
-                    wait_time = 2 ** attempt * 15
-                    logging.warning(f"Got {response.status_code}, retrying in {wait_time}s...")
-                    time.sleep(wait_time)
+            
+        except APIError as e:
+            if e.code in [429, 503] and attempt < 3:
+                wait_time = 2 ** attempt * 15
+                logging.warning(f"Got API error {e.code}, retrying in {wait_time}s...")
+                time.sleep(wait_time)
             else:
                 logging.error(f"Error analyzing batch: {e}")
                 return {}
         except Exception as e:
             logging.error(f"Error analyzing batch: {e}")
             return {}
+            
+    return {}
 
 def deduplicate_and_filter(analyzed_articles, db: Database):
     """
